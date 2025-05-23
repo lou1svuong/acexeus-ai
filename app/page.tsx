@@ -1,101 +1,292 @@
+"use client";
+
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import {
+  AIMessage,
+  AIMessageAvatar,
+  AIMessageContent,
+} from "@/components/ui/chat/ai/message";
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+const messages: {
+  from: "user" | "assistant";
+  content: string;
+  avatar: string;
+  name: string;
+}[] = [
+  {
+    from: "user",
+    content: "Hello, how are you?",
+    avatar: "https://github.com/haydenbleasel.png",
+    name: "Hayden Bleasel",
+  },
+  {
+    from: "assistant",
+    content: "I am fine, thank you!",
+    avatar: "https://github.com/openai.png",
+    name: "OpenAI",
+  },
+  {
+    from: "user",
+    content: "What is the weather in Tokyo?",
+    avatar: "https://github.com/haydenbleasel.png",
+    name: "Hayden Bleasel",
+  },
+  {
+    from: "assistant",
+    content: "The weather in Tokyo is sunny.",
+    avatar: "https://github.com/openai.png",
+    name: "OpenAI",
+  },
+];
+
+import {
+  CodeBlock,
+  CodeBlockBody,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+  CodeBlockFilename,
+  CodeBlockFiles,
+  CodeBlockHeader,
+  CodeBlockItem,
+  CodeBlockSelect,
+  CodeBlockSelectContent,
+  CodeBlockSelectItem,
+  CodeBlockSelectTrigger,
+  CodeBlockSelectValue,
+} from "@/components/ui/chat/code-block";
+import type { BundledLanguage } from "@/components/ui/chat/code-block";
+import { useEffect } from "react";
+import { AIResponse } from "@/components/ui/chat/ai/response";
+
+import {
+  AIInput,
+  AIInputButton,
+  AIInputModelSelect,
+  AIInputModelSelectContent,
+  AIInputModelSelectItem,
+  AIInputModelSelectTrigger,
+  AIInputModelSelectValue,
+  AIInputSubmit,
+  AIInputTextarea,
+  AIInputToolbar,
+  AIInputTools,
+} from "@/components/ui/chat/ai/input";
+import { GlobeIcon, MicIcon, PlusIcon, SendIcon } from "lucide-react";
+import { type FormEventHandler, useState } from "react";
+import { ModeToggle } from "@/components/theme/theme-toggle";
+const code = [
+  {
+    language: "jsx",
+    filename: "MyComponent.jsx",
+    code: `function MyComponent(props) {
+  return (
+    <div>
+      <h1>Hello, {props.name}!</h1>
+      <p>This is an example React component.</p>
     </div>
+  );
+}`,
+  },
+  {
+    language: "tsx",
+    filename: "MyComponent.tsx",
+    code: `function MyComponent(props: { name: string }) {
+  return (
+    <div>
+      <h1>Hello, {props.name}!</h1>
+      <p>This is an example React component.</p>
+    </div>
+  );
+}`,
+  },
+];
+
+const tokens = [
+  "### Hello",
+  " World",
+  "\n\n",
+  "This",
+  " is",
+  " a",
+  " **",
+  "markdown",
+  "**",
+  " response",
+  " from",
+  " an",
+  " AI",
+  " model",
+  ".",
+  "\n\n",
+  "```",
+  "javascript",
+  "\n",
+  "const",
+  " greeting",
+  " = ",
+  "'Hello, world!'",
+  ";",
+  "\n",
+  "console",
+  ".",
+  "log",
+  "(",
+  "greeting",
+  ")",
+  ";",
+  "\n",
+  "```",
+  "\n\n",
+  "Here's",
+  " a",
+  " [",
+  "link",
+  "](",
+  "https://example.com",
+  ")",
+  " and",
+  " some",
+  " more",
+  " text",
+  " with",
+  " a",
+  " list",
+  ":",
+  "\n\n",
+  "-",
+  " Item",
+  " one",
+  "\n",
+  "-",
+  " Item",
+  " two",
+  "\n",
+  "-",
+  " Item",
+  " three",
+];
+
+const models = [
+  { id: "gpt-4", name: "GPT-4" },
+  { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" },
+  { id: "claude-2", name: "Claude 2" },
+  { id: "claude-instant", name: "Claude Instant" },
+  { id: "palm-2", name: "PaLM 2" },
+  { id: "llama-2-70b", name: "Llama 2 70B" },
+  { id: "llama-2-13b", name: "Llama 2 13B" },
+  { id: "cohere-command", name: "Command" },
+  { id: "mistral-7b", name: "Mistral 7B" },
+];
+
+export default function Home() {
+  const [content, setContent] = useState("");
+  const [model, setModel] = useState<string>(models[0].id);
+
+  useEffect(() => {
+    let currentContent = "";
+    let index = 0;
+    const interval = setInterval(() => {
+      if (index < tokens.length) {
+        currentContent += tokens[index];
+        setContent(currentContent);
+        index++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const message = formData.get("message");
+    console.log("Submitted message:", message);
+  };
+  return (
+    <>
+      <ModeToggle />
+      <AIResponse>{content}</AIResponse>;
+      <AIInput onSubmit={handleSubmit}>
+        <AIInputTextarea />
+        <AIInputToolbar>
+          <AIInputTools>
+            <AIInputButton>
+              <PlusIcon size={16} />
+            </AIInputButton>
+            <AIInputButton>
+              <MicIcon size={16} />
+            </AIInputButton>
+            <AIInputButton>
+              <GlobeIcon size={16} />
+              <span>Search</span>
+            </AIInputButton>
+            <AIInputModelSelect value={model} onValueChange={setModel}>
+              <AIInputModelSelectTrigger>
+                <AIInputModelSelectValue />
+              </AIInputModelSelectTrigger>
+              <AIInputModelSelectContent>
+                {models.map((model) => (
+                  <AIInputModelSelectItem key={model.id} value={model.id}>
+                    {model.name}
+                  </AIInputModelSelectItem>
+                ))}
+              </AIInputModelSelectContent>
+            </AIInputModelSelect>
+          </AIInputTools>
+          <AIInputSubmit>
+            <SendIcon size={16} />
+          </AIInputSubmit>
+        </AIInputToolbar>
+      </AIInput>
+      {messages.map(({ content, ...message }, index) => (
+        <AIMessage key={index} from={message.from}>
+          <AIMessageContent>{content}</AIMessageContent>
+          <AIMessageAvatar src={message.avatar} name={message.name} />
+        </AIMessage>
+      ))}
+      <div className="flex flex-col gap-4">
+        <CodeBlock data={code} defaultValue={code[0].language}>
+          <CodeBlockHeader>
+            <CodeBlockFiles>
+              {(item) => (
+                <CodeBlockFilename key={item.language} value={item.language}>
+                  {item.filename}
+                </CodeBlockFilename>
+              )}
+            </CodeBlockFiles>
+            <CodeBlockSelect>
+              <CodeBlockSelectTrigger>
+                <CodeBlockSelectValue />
+              </CodeBlockSelectTrigger>
+              <CodeBlockSelectContent>
+                {(item) => (
+                  <CodeBlockSelectItem
+                    key={item.language}
+                    value={item.language}
+                  >
+                    {item.language}
+                  </CodeBlockSelectItem>
+                )}
+              </CodeBlockSelectContent>
+            </CodeBlockSelect>
+            <CodeBlockCopyButton
+              onCopy={() => console.log("Copied code to clipboard")}
+              onError={() => console.error("Failed to copy code to clipboard")}
+            />
+          </CodeBlockHeader>
+          <CodeBlockBody>
+            {(item) => (
+              <CodeBlockItem key={item.language} value={item.language}>
+                <CodeBlockContent language={item.language as BundledLanguage}>
+                  {item.code}
+                </CodeBlockContent>
+              </CodeBlockItem>
+            )}
+          </CodeBlockBody>
+        </CodeBlock>
+      </div>
+    </>
   );
 }
