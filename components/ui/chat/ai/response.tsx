@@ -100,17 +100,46 @@ const components: Options["components"] = {
     </h6>
   ),
   code: ({ node, className, children }) => {
-    let language = "javascript";
-
-    if (typeof node?.properties?.className === "string") {
-      language = node.properties.className.replace("language-", "");
+    if (!className) {
+      return (
+        <code className={cn("rounded bg-muted px-1 py-0.5", className)}>
+          {children}
+        </code>
+      );
     }
+
+    const language = className.replace(/^language-/, "");
+    const code = String(children).replace(/\n$/, "");
+
+    const languageMap: Record<string, BundledLanguage> = {
+      js: "javascript",
+      jsx: "javascript",
+      ts: "typescript",
+      tsx: "typescript",
+      py: "python",
+      rb: "ruby",
+      rs: "rust",
+      md: "markdown",
+      sh: "shell",
+      bash: "shell",
+      zsh: "shell",
+      html: "html",
+      css: "css",
+      json: "json",
+      yml: "yaml",
+      yaml: "yaml",
+      xml: "xml",
+      sql: "sql",
+      graphql: "graphql",
+    };
+
+    const mappedLanguage = languageMap[language] || "typescript";
 
     const data: CodeBlockProps["data"] = [
       {
-        language,
-        filename: "index.js",
-        code: children as string,
+        language: mappedLanguage,
+        filename: `index.${language}`,
+        code,
       },
     ];
 
@@ -118,7 +147,7 @@ const components: Options["components"] = {
       <CodeBlock
         className={cn("my-4", className)}
         data={data}
-        defaultValue={data[0].language}
+        defaultValue={mappedLanguage}
       >
         <CodeBlockHeader>
           <CodeBlockFiles>
